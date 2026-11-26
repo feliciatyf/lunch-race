@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lunch Amazing Race</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=Inter:wght@400;600&display=swap">
+<style>
+/* VOICE: a race official handing you a sealed clue: brisk, clear, a little thrilling.
+   IDEA: the route clue envelope, split yellow over red, torn open once the race starts.
+   PICTURE: the clue card itself is the picture: address, riddle, answer box.
+   COLOUR and TYPE: route yellow #ffd21f, signal red #d7262e, ink #17130f; Archivo 800 + Inter.
+   LAYOUT: one column on phones; facilitator board is a ranked table plus team cards. */
+:root{color-scheme:light dark;--bg:light-dark(#fffbea,#15120c);--ink:light-dark(#17130f,#f6f0de);--mut:light-dark(#6b6151,#b3a890);--card:light-dark(#ffffff,#221d14);--line:light-dark(#eadfbf,#3a3223);--y:#ffd21f;--r:#d7262e;--ok:light-dark(#137a3d,#5fd38a)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Inter,system-ui,sans-serif;overflow-x:clip}
+h1,h2,h3{font-family:Archivo,Inter,sans-serif;font-weight:800;line-height:1.05;margin:0;text-wrap:balance}
+h1{font-size:clamp(32px,6vw,48px)}h2{font-size:24px}h3{font-size:18px}
+.top{background:var(--y);color:#17130f;border-bottom:10px solid var(--r);padding:20px max(5vw,16px) 18px}
+.top .row{display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap;max-width:1100px;margin:auto}
+.clock{font:800 clamp(30px,8vw,44px)/1 Archivo,sans-serif;font-variant-numeric:tabular-nums;white-space:nowrap}
+.sub{font-size:14px;opacity:.8}
+main{max-width:1100px;margin:auto;padding:24px max(5vw,16px) 64px;display:grid;gap:20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:0 2px 0 var(--line)}
+.env{overflow:hidden;padding:0}
+.env .flap{background:linear-gradient(170deg,var(--y) 0 58%,var(--r) 58.4% 100%);color:#17130f;padding:18px 20px 34px}
+.env .body{padding:20px}
+.lbl{font-size:13px;color:var(--mut);margin:0 0 4px}
+.addr{font-weight:600;font-size:17px}
+blockquote{margin:14px 0 0;padding:14px 16px;border-left:5px solid var(--r);background:light-dark(#fff6d0,#2b2416);border-radius:0 10px 10px 0;font-size:17px;white-space:pre-line}
+button,.btn{font:600 16px Inter,sans-serif;min-height:44px;padding:10px 16px;border-radius:10px;border:2px solid var(--ink);background:var(--ink);color:var(--bg);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+button.ghost,.btn.ghost{background:transparent;color:var(--ink)}
+button.red{background:var(--r);border-color:var(--r);color:#fff}
+button.sm{min-height:36px;padding:4px 10px;font-size:14px}
+button:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,input:focus-visible,.btn:focus-visible{outline:3px solid var(--r);outline-offset:2px}
+input[type=text]{font:16px Inter,sans-serif;width:100%;min-height:48px;padding:10px 12px;border-radius:10px;border:2px solid var(--line);background:var(--bg);color:var(--ink)}
+.form{display:flex;gap:10px;flex-wrap:wrap}.form input{flex:1 1 220px}
+.msg{margin:12px 0 0;font-weight:600}.msg.bad{color:var(--r)}.msg.good{color:var(--ok)}
+.confirm{margin-top:12px;padding:12px;border-radius:10px;background:light-dark(#fff0f0,#2e1517);border:1px solid var(--r)}
+.confirm .acts{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.teams{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:12px}
+.tbtn{display:block;text-decoration:none;color:#17130f;background:var(--y);border-radius:14px;padding:18px;border-bottom:8px solid var(--r);font:800 24px Archivo,sans-serif}
+.tbtn span{display:block;font:400 14px Inter,sans-serif}
+.pens{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.pill{font-size:14px;padding:4px 10px;border-radius:99px;border:1px solid var(--line);white-space:nowrap}
+.win{border:3px solid var(--ok)}
+.shot{max-width:100%;max-height:320px;border-radius:10px;margin-top:10px;display:block}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font-size:13px;color:var(--mut);font-weight:600}
+td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.rank{font:800 22px Archivo,sans-serif}
+.ctl{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.thumb{width:56px;height:56px;object-fit:cover;border-radius:8px;display:block}
+.log{max-height:280px;overflow:auto;font-size:14px}
+.log div{padding:6px 0;border-bottom:1px solid var(--line)}
+.note{font-size:14px;color:var(--mut)}
+.scroll{overflow-x:auto}
+@media(max-width:600px){table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:10px}.stack td{display:flow-root;border:0;padding:3px 0;padding-inline-start:8em;text-align:start}.stack td::before{content:attr(data-l);float:inline-start;width:7.5em;margin-inline-start:-8em;white-space:normal;color:var(--mut)}.stack td:empty{display:none}}
+@media(prefers-reduced-motion:no-preference){.env.open .flap{animation:tear .5s ease-out}@keyframes tear{from{transform:translateY(-14px);opacity:.4}to{transform:none;opacity:1}}}
+</style>
+<script>new MutationObserver(()=>{for(const c of document.querySelectorAll('.stack td:not([data-l])')){let i=0,p=c;while(p=p.previousElementSibling)i+=p.colSpan;c.dataset.l=c.closest('table').rows[0].cells[i]?.textContent||''}}).observe(document,{childList:true,subtree:true})</script>
+</head>
+<body>
+<header class="top"><div class="row"><div><div class="sub" id="kicker">Lunch Amazing Race</div><h1 id="title">Pick your team</h1></div><div><div class="sub">Race clock</div><div class="clock" id="clock">--:--</div></div></div></header>
+<main id="app"><div class="card">Loading the race…</div></main>
+<script src="config.js"></script>
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import{getFirestore,doc,collection,setDoc,addDoc,deleteDoc,getDocs,onSnapshot}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+const CFG=window.RACE_CONFIG||{};
+const WRONG=2,HINT=5,GOOGLE=10,BONUS=2;
+const TEAMS=[
+{n:1,addr:"30 Foch Rd, #01-02 (Bistro8@Foch Road), Singapore 209276",park:"City Square Mall car park, 180 Kitchener Road",
+r:"My first reads the same from the front or the back:\na kayak's two ends, with a zero packed in the middle.\nMy second unlocks every door that you meet,\nbut its tail's been swapped out. Now it's spelt like its middle.\nMy third is a victory that weighs a whole ton,\nand it's a dumpling, once you've said it as one.\nMy last is the thing in your head you should use,\nand the thing in your bowl that you slurp. Take your clues!",
+h:"Say each line out loud. The third line splits into a win and a weight.",
+a:["c780f384a2278db2","d766ee20ce9793ea","bdfa57c5b77dfa9e","d321e0b08ff308ef","dd7e24d6b4002c47","ba0ac116f5545458","9c305a52ce4ee798","27b91fb59f51be61","0c9ebd43aa9314de"],s:"S29rIEtlZSBXb250b24gTm9vZGxl"},
+{n:2,addr:"24 Foch Rd, Singapore 209263",park:"City Square Mall car park, 180 Kitchener Road",
+r:"Begin with the lightest element's sign,\nthen shout \"Hey, YOU!\", then the top grade in line.\nNext, the grade no parent wants to see,\nbut spell it the way that it sounds to me.\nA bell that rings twice names a harbour of fame,\nwhere a giant ape nearly shares half the name.\nThen what comedians do to a guest at their best,\nand what happens to duck before it's served to the rest.\nAnd last, Germany's tag before what glows.\nPut them together and the joy overflows.",
+h:"The first word mixes a chemical symbol, a sound and a letter grade. The last word starts with a two-letter country code.",
+a:["b715394a52622274","d2170856d4691a62","ef717d106c01a7bf","b928e057629d6a9c","abf87885179a45f1","e111dc8fa884a71b","51b0f0d19a8a9179","87e4b00477b692a2","78e4c187ad56b1e0"],s:"SHVhIERlZSBIb25nIEtvbmcgUm9hc3RlZCBEZWxpZ2h0cw=="},
+{n:3,addr:"30 Foch Rd, #01-02 (Bistro8@Foch Road), Singapore 209276",park:"City Square Mall car park, 180 Kitchener Road",
+r:"I'm a saint who can't stand to be odd.\nTake the last day of the working week, but chop off its \"day\",\nand hand the three letters left over to a boy named Ed.\nFinish with the grain of what a bride walks through, which rhymes with what a cat hunts twice.",
+h:"A saint's title is written \"St.\" The last working day is Friday.",
+a:["017a8b63a74006b9","675ee6bb5be13a00","c7c084318b6f1bec","3550e39c0e764b20","73474595215f0103"],s:"U3RldmVuIEZyaWVkIFJpY2U="},
+{n:4,addr:"City Square Mall, 180 Kitchener Road, Singapore 208539",park:"City Square Mall car park, 180 Kitchener Road",
+r:"Begin with the painter whose famous face let out a scream,\nthen point at yourself, in one letter, it would seem.\nNext, the surname of the boy who would never grow old,\nthen the things you can't have and eat too, or so we're told.",
+h:"The painter is Norwegian. The boy lives in Neverland.",
+a:["93f282c6394d14b5","1d426874bceafbc9","05bb4f4afc7e3769"],s:"TXVuY2hpIFBhbmNha2Vz"},
+{n:5,addr:"No address. The riddle is the destination.",park:"SocioQ@Besar, 321C Jalan Besar",
+r:"I'm bigger than a town, but I'm not a state.\nI've four equal sides and four corners straight.\nI'm where you go when your wallet's too full.\nYou'll find me where Farrer Park's trains make their pull.",
+h:"Each line gives one word of the name.",
+a:["ad0746b2b3f6ccc1","41913504511b6aa9","9378c2d7471f6ade"],s:"Q2l0eSBTcXVhcmUgTWFsbA=="}];
+const $=s=>document.querySelector(s);
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=ms=>{if(ms==null||ms<0)return'--:--';const t=Math.floor(ms/1000),h=Math.floor(t/3600),m=Math.floor(t%3600/60),s=t%60;return(h?h+':'+String(m).padStart(2,'0'):m)+':'+String(s).padStart(2,'0')};
+const norm=s=>String(s).toLowerCase().replace(/[^a-z]/g,'');
+async function sha(s){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('').slice(0,16)}
+const S={start:null,guesses:[],hints:{},deliv:{},adj:{},loaded:false,err:''};
+let fs=null,canEdit=false,canWrite=true,ui={};
+const db={doc:p=>{const r=doc(fs,p);return{set:d=>setDoc(r,d),delete:()=>deleteDoc(r)}},collection:p=>({add:d=>addDoc(collection(fs,p),d),get:()=>getDocs(collection(fs,p))})};
+const KEY=String(CFG.facilitatorKey||'');
+const route=()=>{const h=location.hash.slice(1);if(KEY&&h==='host-'+KEY){canEdit=true;return{v:'host'}}canEdit=false;const m=h.match(/^team-([1-5])$/);return m?{v:'team',n:+m[1]}:{v:'home'}};
+function teamStats(n){
+  const g=S.guesses.filter(x=>x.team===n).sort((a,b)=>a.at-b.at);
+  const ok=g.find(x=>x.ok);const wrong=g.filter(x=>!x.ok&&(!ok||x.at<ok.at)).length;
+  const hint=!!S.hints['t'+n];const adj=S.adj['t'+n]||{};const google=+adj.google||0,bonus=+adj.bonus||0;
+  const pen=wrong*WRONG+(hint?HINT:0)+google*GOOGLE-bonus*BONUS;
+  const dAt=S.deliv['t'+n]?.at??null;const run=S.start&&dAt?dAt-S.start:null;
+  return{g,ok,wrong,hint,google,bonus,pen,dAt,run,total:run!=null?run+pen*60000:null}
+}
+function pens(t){return`<div class="pens"><span class="pill">Wrong guesses: ${t.wrong} (+${t.wrong*WRONG} min)</span><span class="pill">Hint: ${t.hint?'opened (+'+HINT+' min)':'sealed'}</span>${t.google?`<span class="pill">Googling: +${t.google*GOOGLE} min</span>`:''}${t.bonus?`<span class="pill">Bonus: −${t.bonus*BONUS} min</span>`:''}<span class="pill"><b>Penalty total: ${t.pen} min</b></span></div>`}
+function home(){
+  $('#title').textContent='Pick your team';
+  return`<div class="card"><h2>Which car are you in?</h2><p class="note">Open your team's page and keep it open for the whole race. Your riddle stays sealed until the facilitator starts the clock.</p><div class="teams">${TEAMS.map(t=>`<a class="tbtn" href="#team-${t.n}">Team ${t.n}<span>Open clue</span></a>`).join('')}</div></div>`
+}
+function team(n){
+  const T=TEAMS[n-1],t=teamStats(n);$('#title').textContent='Team '+n;
+  if(!S.start)return`<div class="card env"><div class="flap"><h2>Sealed</h2><p>Your clue opens when the facilitator starts the race. Get in the car and wait.</p></div><div class="body"><p class="lbl">Park at</p><p class="addr">${esc(T.park)}</p><p class="note">Rules: wrong guesses +${WRONG} min, opening the hint +${HINT} min, Googling the shop name before you solve it +${GOOGLE} min.</p></div></div>`;
+  let out=`<div class="card env open"><div class="flap"><p class="lbl" style="color:#17130f">Drive to</p><p class="addr">${esc(T.addr)}</p><p class="lbl" style="color:#17130f;margin-top:8px">Park at</p><p class="addr">${esc(T.park)}</p></div><div class="body"><h3>Your riddle</h3><blockquote>${esc(T.r)}</blockquote>`;
+  if(t.ok){const name=atob(T.s);out+=`</div></div><div class="card win"><h2>Correct: ${esc(name)}</h2><p>${n===5?'Head into City Square Mall and take a team selfie at the entrance sign.':'Walk in, find the stall, and say: <b>"Team '+n+' order"</b>. Then take a team selfie in front of the signboard.'}</p><p class="lbl">Solved at ${fmt(t.ok.at-S.start)}</p>${pens(t)}</div>`;
+    out+=`<div class="card"><h3>Selfie proof</h3><p>Send your team selfie to the facilitators on WhatsApp${CFG.whatsappNote?': '+esc(CFG.whatsappNote):'.'}</p></div>`;
+    out+=`<div class="card"><h3>${t.dAt?'Delivered. Clock stopped at '+fmt(t.run):'Bring the food back to SocioQ@Besar'}</h3><p class="note">${t.dAt?'Final score: '+fmt(t.total)+' including penalties.':'The facilitator stops your clock when the food is on the table at 321C Jalan Besar.'}</p></div>`;
+    return out}
+  out+=`<p class="lbl" style="margin-top:18px">Your guess: the full shop name</p><form class="form" id="gf"><input type="text" id="gi" autocomplete="off" placeholder="Type the shop name" value="${esc(ui.draft||'')}" ${canWrite?'':'disabled'}><button ${canWrite?'':'disabled'}>Check</button></form>`;
+  if(ui.pending)out+=`<div class="confirm">Check "<b>${esc(ui.pending)}</b>"? A wrong guess adds ${WRONG} minutes.<div class="acts"><button class="red" id="gyes">Yes, check it</button><button class="ghost" id="gno">Edit</button></div></div>`;
+  if(ui.msg)out+=`<p class="msg ${ui.msgOk?'good':'bad'}">${esc(ui.msg)}</p>`;
+  if(!canWrite)out+=`<p class="note">You can view this race but not submit. Ask the facilitator for Contributor access.</p>`;
+  out+=`</div></div><div class="card"><h3>Hint envelope</h3>${t.hint?`<blockquote>${esc(T.h)}</blockquote>`:ui.hintAsk?`<div class="confirm">Opening the hint adds ${HINT} minutes. Open it?<div class="acts"><button class="red" id="hyes">Open hint</button><button class="ghost" id="hno">Keep it sealed</button></div></div>`:`<p class="note">Stuck? Opening it costs ${HINT} minutes.</p><button class="ghost" id="hask" ${canWrite?'':'disabled'}>Open hint</button>`}${pens(t)}</div>`;
+  return out
+}
+function host(){
+  $('#title').textContent='Facilitator board';
+  if(!canEdit)return`<div class="card"><h2>Facilitator only</h2><p>This board is for the race facilitator.</p><a class="btn ghost" href="#">Back to teams</a></div>`;
+  const rows=TEAMS.map(T=>({T,t:teamStats(T.n)})).sort((a,b)=>(a.t.total??1e15)-(b.t.total??1e15)||(b.t.ok?1:0)-(a.t.ok?1:0));
+  let out=`<div class="card"><div class="ctl">${S.start?`<span class="pill">Started ${new Date(S.start).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</span>`:`<button class="red" id="start">Start the race</button>`}<button class="ghost" id="resetAsk">Reset race</button><a class="btn ghost" href="#">Team links</a></div>${ui.resetAsk?`<div class="confirm">This clears every guess, hint, penalty and time. It can't be undone.<div class="acts"><button class="red" id="resetYes">Clear everything</button><button class="ghost" id="resetNo">Cancel</button></div></div>`:''}<p class="note">Penalties: wrong guess +${WRONG} min, hint +${HINT}, Googling +${GOOGLE}, bonus −${BONUS}. Tap Delivered when a team's food reaches the table.</p></div>`;
+  out+=`<div class="card"><h2>Leaderboard</h2><div class="scroll"><table class="stack"><thead><tr><th>#</th><th>Team</th><th>Status</th><th>Wrong</th><th>Hint</th><th>Googling</th><th>Bonus</th><th>Clock</th><th>Score</th><th>Food</th></tr></thead><tbody>${rows.map(({T,t},i)=>`<tr><td class="rank">${t.total!=null?i+1:''}</td><td><b>Team ${T.n}</b><br><span class="note">${esc(atob(T.s))}</span></td><td>${t.dAt?'Delivered':t.ok?'Solved '+fmt(t.ok.at-S.start):S.start?'Solving':'Waiting'}</td><td class="n">${t.wrong}</td><td>${t.hint?'Opened':'Sealed'}</td><td><div class="ctl"><button class="sm ghost" data-adj="google" data-d="-1" data-t="${T.n}" aria-label="Remove Googling penalty">−</button><span>${t.google}</span><button class="sm ghost" data-adj="google" data-d="1" data-t="${T.n}" aria-label="Add Googling penalty">+</button></div></td><td><div class="ctl"><button class="sm ghost" data-adj="bonus" data-d="-1" data-t="${T.n}" aria-label="Remove bonus">−</button><span>${t.bonus}</span><button class="sm ghost" data-adj="bonus" data-d="1" data-t="${T.n}" aria-label="Add bonus">+</button></div></td><td class="n">${t.run!=null?fmt(t.run):S.start?fmt(Date.now()-S.start):'--:--'}</td><td class="n"><b>${t.total!=null?fmt(t.total):'+'+t.pen+' min'}</b></td><td>${t.dAt?`<button class="sm ghost" data-undo="${T.n}">Undo</button>`:`<button class="sm" data-deliv="${T.n}" ${S.start?'':'disabled'}>Delivered</button>`}</td></tr>`).join('')}</tbody></table></div></div>`;
+  const log=[...S.guesses].sort((a,b)=>b.at-a.at);
+  out+=`<div class="card"><h3>Guess log</h3><div class="log">${log.length?log.map(g=>`<div><b>Team ${esc(g.team)}</b> · ${S.start?fmt(g.at-S.start):''} · ${g.ok?'✓':'✗'} ${esc(g.text)}</div>`).join(''):'<p class="note">No guesses yet.</p>'}</div></div>`;
+  return out
+}
+function render(){
+  const a=document.activeElement,keep=a&&a.id==='gi'?{v:a.value,s:a.selectionStart}:null;
+  if(keep)ui.draft=keep.v;
+  const r=route();let h;
+  if(!S.loaded)h=`<div class="card">${S.err?esc(S.err):'Loading the race…'}</div>`;
+  else h=r.v==='team'?team(r.n):r.v==='host'?host():home();
+  if(S.err&&S.loaded)h=`<div class="card note">${esc(S.err)}</div>`+h;
+  $('#app').innerHTML=h;
+  if(keep){const i=$('#gi');if(i){i.focus();try{i.setSelectionRange(keep.s,keep.s)}catch(e){}}}
+  tick()
+}
+function tick(){$('#clock').textContent=S.start?fmt(Date.now()-S.start):'--:--'}
+setInterval(()=>{tick();if(route().v==='host'&&S.start)render()},1000);
+const fail=e=>{S.err='Could not save: '+(e&&e.message||'please try again.');render()};
+document.addEventListener('submit',e=>{e.preventDefault();const v=$('#gi')?.value.trim();if(!v)return;ui.draft=v;ui.pending=v;ui.msg='';render()});
+document.addEventListener('input',e=>{if(e.target.id==='gi')ui.draft=e.target.value});
+document.addEventListener('click',async e=>{
+  const b=e.target.closest('button');if(!b)return;const r=route();
+  try{
+  if(b.id==='gno'){ui.pending='';render()}
+  else if(b.id==='gyes'){const v=ui.pending;ui.pending='';b.disabled=true;const T=TEAMS[r.n-1];const ok=T.a.includes(await sha(norm(v).replace(/^the/,'')))||T.a.includes(await sha(norm(v)));
+    await db.collection('guesses').add({team:r.n,text:v.slice(0,120),ok,at:Date.now()});ui.msg=ok?'Correct!':'Not quite. +'+WRONG+' minutes. Try again.';ui.msgOk=ok;if(ok)ui.draft='';render()}
+  else if(b.id==='hask'){ui.hintAsk=true;render()}
+  else if(b.id==='hno'){ui.hintAsk=false;render()}
+  else if(b.id==='hyes'){ui.hintAsk=false;await db.doc('hints/t'+r.n).set({at:Date.now()})}
+  else if(b.id==='start'){await db.doc('race/state').set({startedAt:Date.now()})}
+  else if(b.id==='resetAsk'){ui.resetAsk=true;render()}
+  else if(b.id==='resetNo'){ui.resetAsk=false;render()}
+  else if(b.id==='resetYes'){ui.resetAsk=false;const all=await db.collection('guesses').get();for(const d of all.docs)await db.doc('guesses/'+d.id).delete();for(const c of['hints','delivered','adjust'])for(let i=1;i<=5;i++)await db.doc(c+'/t'+i).delete();await db.doc('race/state').delete()}
+  else if(b.dataset.deliv){await db.doc('delivered/t'+b.dataset.deliv).set({at:Date.now()})}
+  else if(b.dataset.undo){await db.doc('delivered/t'+b.dataset.undo).delete()}
+  else if(b.dataset.adj){const k='t'+b.dataset.t,cur=S.adj[k]||{},next={google:+cur.google||0,bonus:+cur.bonus||0};next[b.dataset.adj]=Math.max(0,next[b.dataset.adj]+ +b.dataset.d);await db.doc('adjust/'+k).set(next)}
+  }catch(err){fail(err)}
+});
+addEventListener('hashchange',()=>{ui={};render()});
+render();
+(()=>{
+  if(!CFG.firebase||!CFG.firebase.projectId||String(CFG.firebase.apiKey).startsWith('PASTE')){S.err='Race not set up yet: add your Firebase settings to config.js.';render();return}
+  try{fs=getFirestore(initializeApp(CFG.firebase))}catch(e){S.err='Could not connect to Firebase. Check config.js.';render();return}
+  const timer=setTimeout(()=>{S.err="Can't reach the race data yet. Check your connection.";S.loaded=true;render()},10000);
+  let got=0;const done=()=>{if(++got>=5){clearTimeout(timer);if(S.err.startsWith("Can't"))S.err='';}S.loaded=true;render()};
+  const onErr=e=>{clearTimeout(timer);S.err='Race data stopped updating ('+(e&&e.code||'error')+'). Reload the page.';S.loaded=true;render()};
+  onSnapshot(doc(fs,'race/state'),s=>{S.start=s.exists()?(+s.data().startedAt||null):null;done()},onErr);
+  onSnapshot(collection(fs,'guesses'),q=>{S.guesses=q.docs.map(d=>{const x=d.data();return{team:+x.team,text:String(x.text||''),ok:!!x.ok,at:+x.at||0}});done()},onErr);
+  const map=(c,k)=>onSnapshot(collection(fs,c),q=>{const o={};q.docs.forEach(d=>o[d.id]=d.data());S[k]=o;done()},onErr);
+  map('hints','hints');map('delivered','deliv');map('adjust','adj');
+})();
+</script>
+</body>
+</html>
