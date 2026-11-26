@@ -59,6 +59,7 @@ td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .log div{padding:6px 0;border-bottom:1px solid var(--line)}
 .note{font-size:14px;color:var(--mut)}
 .back{justify-self:start}
+.lb{font-size:15px}.lb th,.lb td{padding:10px 6px}.lb th:first-child,.lb td:first-child{width:2.2em;padding-left:0}.lb td:last-child,.lb th:last-child{text-align:right;padding-right:0}.lb .st{display:block;font-size:13px;color:var(--mut);font-weight:400}.lb .run{color:var(--mut);font-weight:400}.lb th.n{text-align:right}
 .ord{max-width:100%;max-height:75vh;border-radius:10px;display:block;margin-top:10px;border:1px solid var(--line)}
 .rules{margin:8px 0 0;padding-left:22px;display:grid;gap:6px}
 .scroll{overflow-x:auto}
@@ -152,7 +153,7 @@ function team(n){
 function board(){
   $('#title').textContent='Leaderboard';
   const rows=TEAMS.map(T=>({T,t:teamStats(T.n)})).sort((a,b)=>(a.t.total??1e15)-(b.t.total??1e15)||(a.t.ok?.at??1e15)-(b.t.ok?.at??1e15)||a.T.n-b.T.n);
-  return`<a class="btn ghost back" href="#">← Back to team list</a><div class="card"><h2>Live leaderboard</h2><p class="note">Final score = time until your food reaches the table + penalties. Updates live.</p><div class="scroll"><table class="stack"><thead><tr><th>#</th><th>Team</th><th>Status</th><th>Penalties</th><th>Clock</th><th>Score</th></tr></thead><tbody>${rows.map(({T,t},i)=>`<tr><td class="rank">${t.total!=null?i+1:''}</td><td><b>Team ${T.n}</b></td><td>${t.dAt?'Delivered':t.ok?'Solved at '+fmt(t.ok.at-S.start):S.start?'Solving':'Waiting'}</td><td class="n">+${t.pen} min</td><td class="n">${t.run!=null?fmt(t.run):S.start?fmt(Date.now()-S.start):'--:--'}</td><td class="n"><b>${t.total!=null?fmt(t.total):'–'}</b></td></tr>`).join('')}</tbody></table></div><p class="note" style="margin-top:10px">Ranks appear once a team's food is delivered. Shop names stay hidden so nobody gets a free answer.</p></div>`
+  return`<a class="btn ghost back" href="#">← Back to team list</a><div class="card"><h2>Live leaderboard</h2><p class="note">Final score = time until your food reaches the table + penalties. Updates live.</p><div class="scroll"><table class="lb"><thead><tr><th>#</th><th>Team</th><th class="n">Penalty</th><th>Score</th></tr></thead><tbody>${rows.map(({T,t},i)=>`<tr><td class="rank">${t.total!=null?i+1:''}</td><td><b>Team ${T.n}</b><span class="st">${t.dAt?'Delivered':t.ok?'Solved at '+fmt(t.ok.at-S.start):S.start?'Solving':'Waiting'}</span></td><td class="n">+${t.pen} min</td><td class="n">${t.total!=null?`<b>${fmt(t.total)}</b>`:`<span class="run">${t.run!=null?fmt(t.run):S.start?fmt(Date.now()-S.start):'--:--'}</span>`}</td></tr>`).join('')}</tbody></table></div><p class="note" style="margin-top:10px">Grey times are still running. A team gets its final score and rank once its food is delivered. Shop names stay hidden so nobody gets a free answer.</p></div>`
 }
 function host(){
   $('#title').textContent='Facilitator board';
