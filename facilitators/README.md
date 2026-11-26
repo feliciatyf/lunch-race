@@ -1,5 +1,15 @@
 # Grab Food order screenshots
 
+## Links
+
+- Facilitator board: https://feliciatyf.github.io/lunch-race/#host-race-b61d1421
+- Team page (for participants): https://feliciatyf.github.io/lunch-race/
+- Live leaderboard (for participants): https://feliciatyf.github.io/lunch-race/#board
+
+The facilitator key (`race-b61d1421`) is set in `config.js`. If you change it there, update the link above too.
+
+## Screenshots
+
 Put each team's Grab Food order screenshot here, named exactly:
 
 - team-1.png
