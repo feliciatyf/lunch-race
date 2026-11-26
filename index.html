@@ -59,6 +59,7 @@ td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .log div{padding:6px 0;border-bottom:1px solid var(--line)}
 .note{font-size:14px;color:var(--mut)}
 .back{justify-self:start}
+.pt{margin-top:8px}.pt td:last-child,.pt th:last-child{text-align:right}
 .lb{font-size:15px}.lb th,.lb td{padding:10px 6px}.lb th:first-child,.lb td:first-child{width:2.2em;padding-left:0}.lb td:last-child,.lb th:last-child{text-align:right;padding-right:0}.lb .st{display:block;font-size:13px;color:var(--mut);font-weight:400}.lb .run{color:var(--mut);font-weight:400}.lb th.n{text-align:right}
 .ord{max-width:100%;max-height:75vh;border-radius:10px;display:block;margin-top:10px;border:1px solid var(--line)}
 .rules{margin:8px 0 0;padding-left:22px;display:grid;gap:6px}
@@ -119,17 +120,17 @@ function teamStats(n){
 function pens(t){return`<div class="pens"><span class="pill">Wrong guesses: ${t.wrong} (+${t.wrong*WRONG} min)</span><span class="pill">Hint: ${t.hint?'opened (+'+HINT+' min)':'sealed'}</span>${t.google?`<span class="pill">Googling: +${t.google*GOOGLE} min</span>`:''}${t.bonus?`<span class="pill">Bonus: −${t.bonus*BONUS} min</span>`:''}<span class="pill"><b>Penalty total: ${t.pen} min</b></span></div>`}
 const ORD={};let ordChecked=false;const checkOrd=()=>{if(ordChecked)return;ordChecked=true;TEAMS.forEach(T=>{const i=new Image();i.onload=()=>{ORD[T.n]=true;render()};i.onerror=()=>{ORD[T.n]=false;render()};i.src='facilitators/team-'+T.n+'.png'});};
 const FINISH="SocioQ@Besar, 321C Jalan Besar, Singapore 208979";
+function penTable(){return`<table class="pt"><thead><tr><th>What happens</th><th>Effect on your score</th></tr></thead><tbody><tr><td>Wrong guess</td><td>+${WRONG} min each</td></tr><tr><td>Open the hint</td><td>+${HINT} min (once)</td></tr><tr><td>Caught Googling</td><td>+${GOOGLE} min each time</td></tr><tr><td>Best team selfie</td><td>−${BONUS} min</td></tr></tbody></table><p class="note" style="margin-top:8px">Score = race time + penalties. Lowest score wins.</p>`}
 function rulesCard(){return`<div class="card"><h3>Race rules</h3><ol class="rules">
-<li>Wait for the facilitator to start the race. Your clue opens on this page at the same moment for every team.</li>
-<li>Drive to the car park on your card. The driver only drives: passengers solve the riddle and handle the phone.</li>
-<li>Work out the full shop name and check it here before you walk in. Each wrong guess adds ${WRONG} minutes.</li>
-<li>No Googling the shop name until you've solved the riddle. Each time a facilitator catches it, ${GOOGLE} minutes are added.</li>
-<li>Stuck? Open the hint envelope on this page. It adds ${HINT} minutes.</li>
-<li>Once you solve the clue correctly, you'll get a Grab Food order number or screenshot on this page. Show it at the stall to collect your food. No payment needed.</li>
-<li>Take a team selfie in front of the shop's signboard and send it to the facilitators on WhatsApp. The best selfie takes ${BONUS} minutes off.</li>
-<li>Bring the food to the finish: ${FINISH}. Your clock stops when the food is on the table.</li>
-<li>Lowest time plus penalties wins. Obey traffic rules and park properly: no penalty is worth a fine.</li>
-</ol></div>`}
+<li>Wait for the facilitator to start the race. Every team's clue opens at the same time.</li>
+<li>Drive to your car park. The driver only drives; passengers solve the clue.</li>
+<li>Check the shop name here before you walk in.</li>
+<li>No Googling the shop name before you've solved the riddle.</li>
+<li>Once solved, your Grab Food order shows on this page. Show it at the stall to collect your food.</li>
+<li>Take a team selfie in front of the shop's signboard and send it to the facilitators on WhatsApp.</li>
+<li>Bring the food to SocioQ@Besar. When it's on the table, tap <b>We've delivered</b> on this page to stop your clock.</li>
+<li>Lowest score wins. Obey traffic rules: no penalty is worth a fine.</li>
+</ol><h3 style="margin-top:18px">Penalties and bonus</h3>${penTable()}</div>`}
 function home(){
   $('#title').textContent='Pick your team';
   return`<div class="card"><h2>Which car are you in?</h2><p class="note">Open your team's page and keep it open for the whole race. Your riddle stays sealed until the facilitator starts the clock.</p><div class="teams">${TEAMS.map(t=>`<a class="tbtn" href="#team-${t.n}">Team ${t.n}<span>Open clue</span></a>`).join('')}</div><p style="margin:16px 0 0"><a class="btn ghost" href="#board">See the live leaderboard</a></p></div>`
@@ -141,7 +142,12 @@ function team(n){
   if(t.ok){const name=atob(T.s);out+=`</div></div><div class="card win"><h2>Correct: ${esc(name)}</h2><p>${n===5?'Head into City Square Mall and take a team selfie at the entrance sign.':'Walk in, find the stall, and show your Grab order below to collect your food. Then take a team selfie in front of the signboard.'}</p><p class="lbl">Solved at ${fmt(t.ok.at-S.start)}</p>${pens(t)}</div>`;
     if(n!==5)out+=`<div class="card"><h3>Your Grab order</h3><img class="ord" src="facilitators/team-${n}.png" alt="Grab Food order for Team ${n}" onerror="this.outerHTML='<p class=note>Your order screenshot isn\\'t up yet. Message the facilitators for your order number.</p>'"><p class="note">Show this at the stall to collect your food.</p></div>`;
     out+=`<div class="card"><h3>Selfie proof</h3><p>Send your team selfie to the facilitators on WhatsApp${CFG.whatsappNote?': '+esc(CFG.whatsappNote):'.'}</p></div>`;
-    out+=`<div class="card"><h3>${t.dAt?'Delivered. Clock stopped at '+fmt(t.run):'Bring the food to the finish: '+esc(FINISH)}</h3><p class="note">${t.dAt?'Final score: '+fmt(t.total)+' including penalties.':'The facilitator stops your clock when the food is on the table at SocioQ@Besar.'}</p></div>`+rulesCard();
+    out+=`<div class="card${t.dAt?' win':''}"><h3>${t.dAt?'Delivered. Clock stopped at '+fmt(t.run):'Bring the food to the finish: '+esc(FINISH)}</h3>`;
+    if(t.dAt)out+=`<p>Final score: <b>${fmtS(t.total)}</b> (race time ${fmt(t.run)} ${penS(t.pen)}).</p>${ui.uAsk?`<div class="confirm">Undo delivered? Your clock starts running again from the race start, as if you hadn't delivered.<div class="acts"><button class="red" id="uyes">Yes, undo</button><button class="ghost" id="uno">Keep delivered</button></div></div>`:`<button class="ghost sm" id="uask">Tapped by mistake? Undo</button>`}`;
+    else if(ui.dAsk===1)out+=`<div class="confirm">Is your food on the table at SocioQ@Besar right now?<div class="acts"><button class="red" id="d1">Yes, it's on the table</button><button class="ghost" id="dno">Not yet</button></div></div>`;
+    else if(ui.dAsk===2)out+=`<div class="confirm"><b>Final check.</b> This stops your clock at ${fmt(Date.now()-S.start)} and locks in your score. Stop the clock?<div class="acts"><button class="red" id="d2">Stop our clock</button><button class="ghost" id="dno">Cancel</button></div></div>`;
+    else out+=`<p class="note">When the food is on the table, tap below to stop your clock.</p><button class="red" id="dask" ${canWrite?'':'disabled'}>We've delivered</button>`;
+    out+=`</div>`+rulesCard();
     return out}
   out+=`<p class="lbl" style="margin-top:18px">Your guess: the full shop name</p><form class="form" id="gf"><input type="text" id="gi" autocomplete="off" placeholder="Type the shop name" value="${esc(ui.draft||'')}" ${canWrite?'':'disabled'}><button ${canWrite?'':'disabled'}>Check</button></form>`;
   if(ui.pending)out+=`<div class="confirm">Check "<b>${esc(ui.pending)}</b>"? A wrong guess adds ${WRONG} minutes.<div class="acts"><button class="red" id="gyes">Yes, check it</button><button class="ghost" id="gno">Edit</button></div></div>`;
@@ -157,13 +163,13 @@ const finalRank=()=>{const R={};rank().filter(x=>x.t.dAt).forEach((x,k)=>R[x.T.n
 function board(){
   $('#title').textContent='Leaderboard';
   const rows=rank(),RK=finalRank();
-  return`<a class="btn ghost back" href="#">← Back to team list</a><div class="card"><h2>Live leaderboard</h2><p class="note">Score = race time + penalties. Lowest score leads. Updates live.</p><div class="scroll"><table class="lb"><thead><tr><th>#</th><th>Team</th><th class="n">Penalty</th><th>Score</th></tr></thead><tbody>${rows.map(({T,t},i)=>`<tr><td class="rank">${RK[T.n]??''}</td><td><b>Team ${T.n}</b><span class="st">${t.dAt?'Delivered':t.ok?'Solved at '+fmt(t.ok.at-S.start):S.start?'Solving':'Waiting'}</span></td><td class="n">${penS(t.pen)}</td><td class="n">${t.total!=null?`<b>${fmtS(t.total)}</b>`:`<span class="run">${S.start?fmtS(score(t)):'--:--'}</span>`}</td></tr>`).join('')}</tbody></table></div><p class="note" style="margin-top:10px">Grey scores are still running and include penalties so far. Bold scores are final: that team's food has been delivered. Shop names stay hidden so nobody gets a free answer.</p></div>`
+  return`<a class="btn ghost back" href="#">← Back to team list</a><div class="card"><h2>Live leaderboard</h2><p class="note">Score = race time + penalties. Lowest score leads. Updates live.</p><div class="scroll"><table class="lb"><thead><tr><th>#</th><th>Team</th><th class="n">Penalty</th><th>Score</th></tr></thead><tbody>${rows.map(({T,t},i)=>`<tr><td class="rank">${RK[T.n]??''}</td><td><b>Team ${T.n}</b><span class="st">${t.dAt?'Delivered':t.ok?'Solved at '+fmt(t.ok.at-S.start):S.start?'Solving':'Waiting'}</span></td><td class="n">${penS(t.pen)}</td><td class="n">${t.total!=null?`<b>${fmtS(t.total)}</b>`:`<span class="run">${S.start?fmtS(score(t)):'--:--'}</span>`}</td></tr>`).join('')}</tbody></table></div><p class="note" style="margin-top:10px">Grey scores are still running and include penalties so far. Bold scores are final: that team's food has been delivered. Shop names stay hidden so nobody gets a free answer.</p></div><div class="card"><h3>Penalties and bonus</h3>${penTable()}</div>`
 }
 function host(){
   $('#title').textContent='Facilitator board';
   if(!canEdit)return`<div class="card"><h2>Facilitator only</h2><p>This board is for the race facilitator.</p><a class="btn ghost" href="#">Back to teams</a></div>`;
   const RK=finalRank();const rows=TEAMS.map(T=>({T,t:teamStats(T.n)}));
-  let out=`<div class="card"><div class="ctl">${S.start?`<span class="pill">Started ${new Date(S.start).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</span>`:`<button class="red" id="start">Start the race</button>`}<button class="ghost" id="resetAsk">Reset race</button><a class="btn ghost" href="#">Team links</a></div>${ui.resetAsk?`<div class="confirm">This clears every guess, hint, penalty and time. It can't be undone.<div class="acts"><button class="red" id="resetYes">Clear everything</button><button class="ghost" id="resetNo">Cancel</button></div></div>`:''}<p class="note">Penalties: wrong guess +${WRONG} min, hint +${HINT}, Googling +${GOOGLE}, bonus −${BONUS}. Tap Delivered when a team's food reaches the table.</p></div>`;
+  let out=`<div class="card"><div class="ctl">${S.start?`<span class="pill">Started ${new Date(S.start).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</span>`:`<button class="red" id="start">Start the race</button>`}<button class="ghost" id="resetAsk">Reset race</button><a class="btn ghost" href="#">Team links</a></div>${ui.resetAsk?`<div class="confirm">This clears every guess, hint, penalty and time. It can't be undone.<div class="acts"><button class="red" id="resetYes">Clear everything</button><button class="ghost" id="resetNo">Cancel</button></div></div>`:''}<p class="note">Penalties: wrong guess +${WRONG} min, hint +${HINT}, Googling +${GOOGLE}, bonus −${BONUS}. Teams tap Delivered themselves (with a double check). You can still mark or undo it here.</p></div>`;
   out+=`<div class="card"><h2>Leaderboard</h2><div class="scroll"><table class="stack"><thead><tr><th>#</th><th>Team</th><th>Status</th><th>Wrong</th><th>Hint</th><th>Googling</th><th>Bonus</th><th>Clock</th><th>Score</th><th>Food</th></tr></thead><tbody>${rows.map(({T,t},i)=>`<tr><td class="rank">${RK[T.n]??''}</td><td><b>Team ${T.n}</b><br><span class="note">${esc(atob(T.s))}</span></td><td>${t.dAt?'Delivered':t.ok?'Solved '+fmt(t.ok.at-S.start):S.start?'Solving':'Waiting'}</td><td class="n">${t.wrong}</td><td>${t.hint?'Opened':'Sealed'}</td><td><div class="ctl"><button class="sm ghost" data-adj="google" data-d="-1" data-t="${T.n}" aria-label="Remove Googling penalty">−</button><span>${t.google}</span><button class="sm ghost" data-adj="google" data-d="1" data-t="${T.n}" aria-label="Add Googling penalty">+</button></div></td><td><div class="ctl"><button class="sm ghost" data-adj="bonus" data-d="-1" data-t="${T.n}" aria-label="Remove bonus">−</button><span>${t.bonus}</span><button class="sm ghost" data-adj="bonus" data-d="1" data-t="${T.n}" aria-label="Add bonus">+</button></div></td><td class="n">${t.run!=null?fmt(t.run):S.start?fmt(Date.now()-S.start):'--:--'}</td><td class="n">${t.total!=null?`<b>${fmtS(t.total)}</b>`:S.start?`<span class="note">${fmtS(score(t))}</span>`:'--:--'}</td><td>${t.dAt?`<button class="sm ghost" data-undo="${T.n}">Undo</button>`:`<button class="sm" data-deliv="${T.n}" ${S.start?'':'disabled'}>Delivered</button>`}</td></tr>`).join('')}</tbody></table></div></div>`;
   const log=[...S.guesses].sort((a,b)=>b.at-a.at);
   checkOrd();
@@ -193,6 +199,13 @@ document.addEventListener('click',async e=>{
   if(b.id==='gno'){ui.pending='';render()}
   else if(b.id==='gyes'){const v=ui.pending;ui.pending='';b.disabled=true;const T=TEAMS[r.n-1];const ok=T.a.includes(await sha(norm(v).replace(/^the/,'')))||T.a.includes(await sha(norm(v)));
     await db.collection('guesses').add({team:r.n,text:v.slice(0,120),ok,at:Date.now()});ui.msg=ok?'Correct!':'Not quite. +'+WRONG+' minutes. Try again.';ui.msgOk=ok;if(ok)ui.draft='';render()}
+  else if(b.id==='dask'){ui.dAsk=1;render()}
+  else if(b.id==='d1'){ui.dAsk=2;render()}
+  else if(b.id==='dno'){ui.dAsk=0;render()}
+  else if(b.id==='d2'){ui.dAsk=0;b.disabled=true;await db.doc('delivered/t'+r.n).set({at:Date.now(),by:'team'})}
+  else if(b.id==='uask'){ui.uAsk=true;render()}
+  else if(b.id==='uno'){ui.uAsk=false;render()}
+  else if(b.id==='uyes'){ui.uAsk=false;b.disabled=true;await db.doc('delivered/t'+r.n).delete()}
   else if(b.id==='hask'){ui.hintAsk=true;render()}
   else if(b.id==='hno'){ui.hintAsk=false;render()}
   else if(b.id==='hyes'){ui.hintAsk=false;await db.doc('hints/t'+r.n).set({at:Date.now()})}
