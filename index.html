@@ -106,7 +106,7 @@ const S={start:null,guesses:[],hints:{},deliv:{},adj:{},loaded:false,err:''};
 let fs=null,canEdit=false,canWrite=true,ui={};
 const db={doc:p=>{const r=doc(fs,p);return{set:d=>setDoc(r,d),delete:()=>deleteDoc(r)}},collection:p=>({add:d=>addDoc(collection(fs,p),d),get:()=>getDocs(collection(fs,p))})};
 const KEY=String(CFG.facilitatorKey||'');
-const route=()=>{const h=location.hash.slice(1);if(KEY&&h==='host-'+KEY){canEdit=true;return{v:'host'}}canEdit=false;const m=h.match(/^team-([1-5])$/);return m?{v:'team',n:+m[1]}:{v:'home'}};
+const route=()=>{const h=location.hash.slice(1);if(KEY&&h==='host-'+KEY){canEdit=true;return{v:'host'}}canEdit=false;if(h==='board')return{v:'board'};const m=h.match(/^team-([1-5])$/);return m?{v:'team',n:+m[1]}:{v:'home'}};
 function teamStats(n){
   const g=S.guesses.filter(x=>x.team===n).sort((a,b)=>a.at-b.at);
   const ok=g.find(x=>x.ok);const wrong=g.filter(x=>!x.ok&&(!ok||x.at<ok.at)).length;
@@ -131,7 +131,7 @@ function rulesCard(){return`<div class="card"><h3>Race rules</h3><ol class="rule
 </ol></div>`}
 function home(){
   $('#title').textContent='Pick your team';
-  return`<div class="card"><h2>Which car are you in?</h2><p class="note">Open your team's page and keep it open for the whole race. Your riddle stays sealed until the facilitator starts the clock.</p><div class="teams">${TEAMS.map(t=>`<a class="tbtn" href="#team-${t.n}">Team ${t.n}<span>Open clue</span></a>`).join('')}</div></div>`
+  return`<div class="card"><h2>Which car are you in?</h2><p class="note">Open your team's page and keep it open for the whole race. Your riddle stays sealed until the facilitator starts the clock.</p><div class="teams">${TEAMS.map(t=>`<a class="tbtn" href="#team-${t.n}">Team ${t.n}<span>Open clue</span></a>`).join('')}</div><p style="margin:16px 0 0"><a class="btn ghost" href="#board">See the live leaderboard</a></p></div>`
 }
 function team(n){
   const T=TEAMS[n-1],t=teamStats(n);$('#title').textContent='Team '+n;
@@ -148,6 +148,11 @@ function team(n){
   if(!canWrite)out+=`<p class="note">You can view this race but not submit. Ask the facilitator for Contributor access.</p>`;
   out+=`</div></div><div class="card"><h3>Hint envelope</h3>${t.hint?`<blockquote>${esc(T.h)}</blockquote>`:ui.hintAsk?`<div class="confirm">Opening the hint adds ${HINT} minutes. Open it?<div class="acts"><button class="red" id="hyes">Open hint</button><button class="ghost" id="hno">Keep it sealed</button></div></div>`:`<p class="note">Stuck? Opening it costs ${HINT} minutes.</p><button class="ghost" id="hask" ${canWrite?'':'disabled'}>Open hint</button>`}${pens(t)}</div>`+rulesCard();
   return out
+}
+function board(){
+  $('#title').textContent='Leaderboard';
+  const rows=TEAMS.map(T=>({T,t:teamStats(T.n)})).sort((a,b)=>(a.t.total??1e15)-(b.t.total??1e15)||(a.t.ok?.at??1e15)-(b.t.ok?.at??1e15)||a.T.n-b.T.n);
+  return`<a class="btn ghost back" href="#">← Back to team list</a><div class="card"><h2>Live leaderboard</h2><p class="note">Final score = time until your food reaches the table + penalties. Updates live.</p><div class="scroll"><table class="stack"><thead><tr><th>#</th><th>Team</th><th>Status</th><th>Penalties</th><th>Clock</th><th>Score</th></tr></thead><tbody>${rows.map(({T,t},i)=>`<tr><td class="rank">${t.total!=null?i+1:''}</td><td><b>Team ${T.n}</b></td><td>${t.dAt?'Delivered':t.ok?'Solved at '+fmt(t.ok.at-S.start):S.start?'Solving':'Waiting'}</td><td class="n">+${t.pen} min</td><td class="n">${t.run!=null?fmt(t.run):S.start?fmt(Date.now()-S.start):'--:--'}</td><td class="n"><b>${t.total!=null?fmt(t.total):'–'}</b></td></tr>`).join('')}</tbody></table></div><p class="note" style="margin-top:10px">Ranks appear once a team's food is delivered. Shop names stay hidden so nobody gets a free answer.</p></div>`
 }
 function host(){
   $('#title').textContent='Facilitator board';
@@ -166,14 +171,14 @@ function render(){
   if(keep)ui.draft=keep.v;
   const r=route();let h;
   if(!S.loaded)h=`<div class="card">${S.err?esc(S.err):'Loading the race…'}</div>`;
-  else h=r.v==='team'?`<a class="btn ghost back" href="#">← Wrong team? Back to team list</a>`+team(r.n):r.v==='host'?host():home();
+  else h=r.v==='team'?`<div class="ctl"><a class="btn ghost" href="#">← Wrong team? Back to team list</a><a class="btn ghost" href="#board">Leaderboard</a></div>`+team(r.n):r.v==='host'?host():r.v==='board'?board():home();
   if(S.err&&S.loaded)h=`<div class="card note">${esc(S.err)}</div>`+h;
   $('#app').innerHTML=h;
   if(keep){const i=$('#gi');if(i){i.focus();try{i.setSelectionRange(keep.s,keep.s)}catch(e){}}}
   tick()
 }
 function tick(){$('#clock').textContent=S.start?fmt(Date.now()-S.start):'--:--'}
-setInterval(()=>{tick();if(route().v==='host'&&S.start)render()},1000);
+setInterval(()=>{tick();if(['host','board'].includes(route().v)&&S.start)render()},1000);
 const fail=e=>{S.err='Could not save: '+(e&&e.message||'please try again.');render()};
 document.addEventListener('submit',e=>{e.preventDefault();const v=$('#gi')?.value.trim();if(!v)return;ui.draft=v;ui.pending=v;ui.msg='';render()});
 document.addEventListener('input',e=>{if(e.target.id==='gi')ui.draft=e.target.value});
