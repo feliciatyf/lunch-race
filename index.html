@@ -59,6 +59,7 @@ td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .log div{padding:6px 0;border-bottom:1px solid var(--line)}
 .note{font-size:14px;color:var(--mut)}
 .back{justify-self:start}
+.ord{max-width:100%;max-height:75vh;border-radius:10px;display:block;margin-top:10px;border:1px solid var(--line)}
 .rules{margin:8px 0 0;padding-left:22px;display:grid;gap:6px}
 .scroll{overflow-x:auto}
 @media(max-width:600px){table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:10px}.stack td{display:flow-root;border:0;padding:3px 0;padding-inline-start:8em;text-align:start}.stack td::before{content:attr(data-l);float:inline-start;width:7.5em;margin-inline-start:-8em;white-space:normal;color:var(--mut)}.stack td:empty{display:none}}
@@ -115,6 +116,7 @@ function teamStats(n){
   return{g,ok,wrong,hint,google,bonus,pen,dAt,run,total:run!=null?run+pen*60000:null}
 }
 function pens(t){return`<div class="pens"><span class="pill">Wrong guesses: ${t.wrong} (+${t.wrong*WRONG} min)</span><span class="pill">Hint: ${t.hint?'opened (+'+HINT+' min)':'sealed'}</span>${t.google?`<span class="pill">Googling: +${t.google*GOOGLE} min</span>`:''}${t.bonus?`<span class="pill">Bonus: −${t.bonus*BONUS} min</span>`:''}<span class="pill"><b>Penalty total: ${t.pen} min</b></span></div>`}
+const ORD={};let ordChecked=false;const checkOrd=()=>{if(ordChecked)return;ordChecked=true;TEAMS.forEach(T=>{const i=new Image();i.onload=()=>{ORD[T.n]=true;render()};i.onerror=()=>{ORD[T.n]=false;render()};i.src='facilitators/team-'+T.n+'.png'});};
 const FINISH="SocioQ@Besar, 321C Jalan Besar, Singapore 208979";
 function rulesCard(){return`<div class="card"><h3>Race rules</h3><ol class="rules">
 <li>Wait for the facilitator to start the race. Your clue opens on this page at the same moment for every team.</li>
@@ -122,7 +124,7 @@ function rulesCard(){return`<div class="card"><h3>Race rules</h3><ol class="rule
 <li>Work out the full shop name and check it here before you walk in. Each wrong guess adds ${WRONG} minutes.</li>
 <li>No Googling the shop name until you've solved the riddle. Each time a facilitator catches it, ${GOOGLE} minutes are added.</li>
 <li>Stuck? Open the hint envelope on this page. It adds ${HINT} minutes.</li>
-<li>At the stall, say "Team [your number] order" to collect your pre-paid food. No payment needed.</li>
+<li>Once you solve the clue correctly, you'll get a Grab Food order number or screenshot on this page. Show it at the stall to collect your food. No payment needed.</li>
 <li>Take a team selfie in front of the shop's signboard and send it to the facilitators on WhatsApp. The best selfie takes ${BONUS} minutes off.</li>
 <li>Bring the food to the finish: ${FINISH}. Your clock stops when the food is on the table.</li>
 <li>Lowest time plus penalties wins. Obey traffic rules and park properly: no penalty is worth a fine.</li>
@@ -135,7 +137,8 @@ function team(n){
   const T=TEAMS[n-1],t=teamStats(n);$('#title').textContent='Team '+n;
   if(!S.start)return`<div class="card env"><div class="flap"><h2>Sealed</h2><p>Your clue opens when the facilitator starts the race. Get in the car and wait.</p></div><div class="body"><p class="lbl">Park at</p><p class="addr">${esc(T.park)}</p><p class="lbl" style="margin-top:8px">Finish</p><p class="addr">${esc(FINISH)}</p></div></div>`+rulesCard();
   let out=`<div class="card env open"><div class="flap"><p class="lbl" style="color:#17130f">Park at</p><p class="addr">${esc(T.park)}</p><p class="lbl" style="color:#17130f;margin-top:8px">Your stop (walk from the car park)</p><p class="addr">${esc(T.addr)}</p><p class="lbl" style="color:#17130f;margin-top:8px">Finish</p><p class="addr">${esc(FINISH)}</p></div><div class="body"><h3>Your riddle</h3><blockquote>${esc(T.r)}</blockquote>`;
-  if(t.ok){const name=atob(T.s);out+=`</div></div><div class="card win"><h2>Correct: ${esc(name)}</h2><p>${n===5?'Head into City Square Mall and take a team selfie at the entrance sign.':'Walk in, find the stall, and say: <b>"Team '+n+' order"</b>. Then take a team selfie in front of the signboard.'}</p><p class="lbl">Solved at ${fmt(t.ok.at-S.start)}</p>${pens(t)}</div>`;
+  if(t.ok){const name=atob(T.s);out+=`</div></div><div class="card win"><h2>Correct: ${esc(name)}</h2><p>${n===5?'Head into City Square Mall and take a team selfie at the entrance sign.':'Walk in, find the stall, and show your Grab order below to collect your food. Then take a team selfie in front of the signboard.'}</p><p class="lbl">Solved at ${fmt(t.ok.at-S.start)}</p>${pens(t)}</div>`;
+    if(n!==5)out+=`<div class="card"><h3>Your Grab order</h3><img class="ord" src="facilitators/team-${n}.png" alt="Grab Food order for Team ${n}" onerror="this.outerHTML='<p class=note>Your order screenshot isn\\'t up yet. Message the facilitators for your order number.</p>'"><p class="note">Show this at the stall to collect your food.</p></div>`;
     out+=`<div class="card"><h3>Selfie proof</h3><p>Send your team selfie to the facilitators on WhatsApp${CFG.whatsappNote?': '+esc(CFG.whatsappNote):'.'}</p></div>`;
     out+=`<div class="card"><h3>${t.dAt?'Delivered. Clock stopped at '+fmt(t.run):'Bring the food to the finish: '+esc(FINISH)}</h3><p class="note">${t.dAt?'Final score: '+fmt(t.total)+' including penalties.':'The facilitator stops your clock when the food is on the table at SocioQ@Besar.'}</p></div>`+rulesCard();
     return out}
@@ -153,6 +156,8 @@ function host(){
   let out=`<div class="card"><div class="ctl">${S.start?`<span class="pill">Started ${new Date(S.start).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</span>`:`<button class="red" id="start">Start the race</button>`}<button class="ghost" id="resetAsk">Reset race</button><a class="btn ghost" href="#">Team links</a></div>${ui.resetAsk?`<div class="confirm">This clears every guess, hint, penalty and time. It can't be undone.<div class="acts"><button class="red" id="resetYes">Clear everything</button><button class="ghost" id="resetNo">Cancel</button></div></div>`:''}<p class="note">Penalties: wrong guess +${WRONG} min, hint +${HINT}, Googling +${GOOGLE}, bonus −${BONUS}. Tap Delivered when a team's food reaches the table.</p></div>`;
   out+=`<div class="card"><h2>Leaderboard</h2><div class="scroll"><table class="stack"><thead><tr><th>#</th><th>Team</th><th>Status</th><th>Wrong</th><th>Hint</th><th>Googling</th><th>Bonus</th><th>Clock</th><th>Score</th><th>Food</th></tr></thead><tbody>${rows.map(({T,t},i)=>`<tr><td class="rank">${t.total!=null?i+1:''}</td><td><b>Team ${T.n}</b><br><span class="note">${esc(atob(T.s))}</span></td><td>${t.dAt?'Delivered':t.ok?'Solved '+fmt(t.ok.at-S.start):S.start?'Solving':'Waiting'}</td><td class="n">${t.wrong}</td><td>${t.hint?'Opened':'Sealed'}</td><td><div class="ctl"><button class="sm ghost" data-adj="google" data-d="-1" data-t="${T.n}" aria-label="Remove Googling penalty">−</button><span>${t.google}</span><button class="sm ghost" data-adj="google" data-d="1" data-t="${T.n}" aria-label="Add Googling penalty">+</button></div></td><td><div class="ctl"><button class="sm ghost" data-adj="bonus" data-d="-1" data-t="${T.n}" aria-label="Remove bonus">−</button><span>${t.bonus}</span><button class="sm ghost" data-adj="bonus" data-d="1" data-t="${T.n}" aria-label="Add bonus">+</button></div></td><td class="n">${t.run!=null?fmt(t.run):S.start?fmt(Date.now()-S.start):'--:--'}</td><td class="n"><b>${t.total!=null?fmt(t.total):'+'+t.pen+' min'}</b></td><td>${t.dAt?`<button class="sm ghost" data-undo="${T.n}">Undo</button>`:`<button class="sm" data-deliv="${T.n}" ${S.start?'':'disabled'}>Delivered</button>`}</td></tr>`).join('')}</tbody></table></div></div>`;
   const log=[...S.guesses].sort((a,b)=>b.at-a.at);
+  checkOrd();
+  out+=`<div class="card"><h3>Grab order screenshots</h3><p class="note">Put them in the repo's facilitators folder as team-1.png to team-4.png. Teams see theirs only after solving.</p><div class="pens">${TEAMS.filter(T=>T.n!==5).map(T=>`<span class="pill">Team ${T.n}: ${ORD[T.n]===undefined?'checking…':ORD[T.n]?'✓ found':'missing'}</span>`).join('')}</div></div>`;
   out+=`<div class="card"><h3>Guess log</h3><div class="log">${log.length?log.map(g=>`<div><b>Team ${esc(g.team)}</b> · ${S.start?fmt(g.at-S.start):''} · ${g.ok?'✓':'✗'} ${esc(g.text)}</div>`).join(''):'<p class="note">No guesses yet.</p>'}</div></div>`;
   return out
 }
