@@ -77,7 +77,7 @@ td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import{getFirestore,doc,collection,setDoc,addDoc,deleteDoc,getDocs,onSnapshot}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 const CFG=window.RACE_CONFIG||{};
-const WRONG=2,HINT=5,GOOGLE=10,BONUS=2,GIVEUP=120;
+const WRONG=2,HINT=5,GOOGLE=10,BONUS=2,GIVEUP=120,GAVE_TXT='(gave up: answer revealed)';
 const TEAMS=[
 {n:1,addr:"30 Foch Rd, #01-02 (Bistro8@Foch Road), Singapore 209276",park:"ActiveSG Jalan Besar car park, 100 Tyrwhitt Road, Singapore 207542",
 r:"My first reads the same from the front or the back:\na kayak's two ends, with a zero packed in the middle.\nMy second unlocks every door that you meet,\nbut its tail's been swapped out. Now it's spelt like its middle.\nMy third is a victory that weighs a whole ton,\nand it's a dumpling, once you've said it as one.\nMy last is the thing in your head you should use,\nand the thing in your bowl that you slurp. Take your clues!",
@@ -212,14 +212,14 @@ document.addEventListener('click',async e=>{
   else if(b.id==='dask'){ui.dAsk=1;render()}
   else if(b.id==='d1'){ui.dAsk=2;render()}
   else if(b.id==='dno'){ui.dAsk=0;render()}
-  else if(b.id==='d2'){ui.dAsk=0;b.disabled=true;await db.doc('delivered/t'+r.n).set({at:Date.now(),by:'team'})}
+  else if(b.id==='d2'){ui.dAsk=0;b.disabled=true;await db.doc('delivered/t'+r.n).set({at:Date.now()})}
   else if(b.id==='uask'){ui.uAsk=true;render()}
   else if(b.id==='uno'){ui.uAsk=false;render()}
   else if(b.id==='uyes'){ui.uAsk=false;b.disabled=true;await db.doc('delivered/t'+r.n).delete()}
   else if(b.id==='gnot'){ui.gStep=0;render()}
   else if(b.id==='gup'){const st=ui.gStep||0;if(st&&Date.now()-(ui.gAt||0)<2500)return;
     if(st<3){ui.gStep=st+1;ui.gAt=Date.now();render()}
-    else{ui.gStep=0;b.disabled=true;const T=TEAMS[r.n-1];await db.collection('guesses').add({team:r.n,text:'(gave up: answer revealed)',ok:true,gaveUp:true,at:Date.now()});ui.msg='';ui.draft=''}}
+    else{ui.gStep=0;b.disabled=true;await db.collection('guesses').add({team:r.n,text:GAVE_TXT,ok:true,at:Date.now()});ui.msg='';ui.draft=''}}
   else if(b.id==='hask'){ui.hintAsk=true;render()}
   else if(b.id==='hno'){ui.hintAsk=false;render()}
   else if(b.id==='hyes'){ui.hintAsk=false;await db.doc('hints/t'+r.n).set({at:Date.now()})}
@@ -241,7 +241,7 @@ render();
   let got=0;const done=()=>{if(++got>=5){clearTimeout(timer);if(S.err.startsWith("Can't"))S.err='';}S.loaded=true;render()};
   const onErr=e=>{clearTimeout(timer);S.err='Race data stopped updating ('+(e&&e.code||'error')+'). Reload the page.';S.loaded=true;render()};
   onSnapshot(doc(fs,'race/state'),s=>{S.start=s.exists()?(+s.data().startedAt||null):null;done()},onErr);
-  onSnapshot(collection(fs,'guesses'),q=>{S.guesses=q.docs.map(d=>{const x=d.data();return{team:+x.team,text:String(x.text||''),ok:!!x.ok,gaveUp:!!x.gaveUp,at:+x.at||0}});done()},onErr);
+  onSnapshot(collection(fs,'guesses'),q=>{S.guesses=q.docs.map(d=>{const x=d.data();return{team:+x.team,text:String(x.text||''),ok:!!x.ok,gaveUp:!!x.ok&&String(x.text||'')===GAVE_TXT,at:+x.at||0}});done()},onErr);
   const map=(c,k)=>onSnapshot(collection(fs,c),q=>{const o={};q.docs.forEach(d=>o[d.id]=d.data());S[k]=o;done()},onErr);
   map('hints','hints');map('delivered','deliv');map('adjust','adj');
 })();
