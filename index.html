@@ -77,7 +77,7 @@ td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import{getFirestore,doc,collection,setDoc,addDoc,deleteDoc,getDocs,onSnapshot}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 const CFG=window.RACE_CONFIG||{};
-const WRONG=2,HINT=5,GOOGLE=10,BONUS=2;
+const WRONG=2,HINT=5,GOOGLE=10,BONUS=2,GIVEUP=120;
 const TEAMS=[
 {n:1,addr:"30 Foch Rd, #01-02 (Bistro8@Foch Road), Singapore 209276",park:"ActiveSG Jalan Besar car park, 100 Tyrwhitt Road, Singapore 207542",
 r:"My first reads the same from the front or the back:\na kayak's two ends, with a zero packed in the middle.\nMy second unlocks every door that you meet,\nbut its tail's been swapped out. Now it's spelt like its middle.\nMy third is a victory that weighs a whole ton,\nand it's a dumpling, once you've said it as one.\nMy last is the thing in your head you should use,\nand the thing in your bowl that you slurp. Take your clues!",
@@ -112,15 +112,15 @@ const route=()=>{const h=location.hash.slice(1);if(KEY&&h==='host-'+KEY){canEdit
 function teamStats(n){
   const g=S.guesses.filter(x=>x.team===n).sort((a,b)=>a.at-b.at);
   const ok=g.find(x=>x.ok);const wrong=g.filter(x=>!x.ok&&(!ok||x.at<ok.at)).length;
-  const hint=!!S.hints['t'+n];const adj=S.adj['t'+n]||{};const google=+adj.google||0,bonus=+adj.bonus||0;
-  const pen=wrong*WRONG+(hint?HINT:0)+google*GOOGLE-bonus*BONUS;
+  const gave=!!(ok&&ok.gaveUp);const hint=!!S.hints['t'+n];const adj=S.adj['t'+n]||{};const google=+adj.google||0,bonus=+adj.bonus||0;
+  const pen=wrong*WRONG+(hint?HINT:0)+google*GOOGLE-bonus*BONUS+(gave?GIVEUP:0);
   const dAt=S.deliv['t'+n]?.at??null;const run=S.start&&dAt?dAt-S.start:null;
-  return{g,ok,wrong,hint,google,bonus,pen,dAt,run,total:run!=null?run+pen*60000:null}
+  return{g,ok,gave,wrong,hint,google,bonus,pen,dAt,run,total:run!=null?run+pen*60000:null}
 }
-function pens(t){return`<div class="pens"><span class="pill">Wrong guesses: ${t.wrong} (+${t.wrong*WRONG} min)</span><span class="pill">Hint: ${t.hint?'opened (+'+HINT+' min)':'sealed'}</span>${t.google?`<span class="pill">Googling: +${t.google*GOOGLE} min</span>`:''}${t.bonus?`<span class="pill">Bonus: −${t.bonus*BONUS} min</span>`:''}<span class="pill"><b>Penalty total: ${t.pen} min</b></span></div>`}
+function pens(t){return`<div class="pens"><span class="pill">Wrong guesses: ${t.wrong} (+${t.wrong*WRONG} min)</span><span class="pill">Hint: ${t.hint?'opened (+'+HINT+' min)':'sealed'}</span>${t.gave?`<span class="pill">Answer revealed: +${GIVEUP} min</span>`:''}${t.google?`<span class="pill">Googling: +${t.google*GOOGLE} min</span>`:''}${t.bonus?`<span class="pill">Bonus: −${t.bonus*BONUS} min</span>`:''}<span class="pill"><b>Penalty total: ${t.pen} min</b></span></div>`}
 const ORD={};let ordChecked=false;const checkOrd=()=>{if(ordChecked)return;ordChecked=true;TEAMS.forEach(T=>{const i=new Image();i.onload=()=>{ORD[T.n]=true;render()};i.onerror=()=>{ORD[T.n]=false;render()};i.src='facilitators/team-'+T.n+'.png'});};
 const FINISH="SocioQ@Besar, 321C Jalan Besar, Singapore 208979";
-function penTable(){return`<table class="pt"><thead><tr><th>What happens</th><th>Effect on your score</th></tr></thead><tbody><tr><td>Wrong guess</td><td>+${WRONG} min each</td></tr><tr><td>Open the hint</td><td>+${HINT} min (once)</td></tr><tr><td>Caught Googling</td><td>+${GOOGLE} min each time</td></tr><tr><td>Best team selfie</td><td>−${BONUS} min</td></tr></tbody></table><p class="note" style="margin-top:8px">Score = race time + penalties. Lowest score wins.</p>`}
+function penTable(){return`<table class="pt"><thead><tr><th>What happens</th><th>Effect on your score</th></tr></thead><tbody><tr><td>Wrong guess</td><td>+${WRONG} min each</td></tr><tr><td>Open the hint</td><td>+${HINT} min (once)</td></tr><tr><td>Caught Googling</td><td>+${GOOGLE} min each time</td></tr><tr><td>Reveal the answer (give up)</td><td>+${GIVEUP} min (2 hours)</td></tr><tr><td>Best team selfie</td><td>−${BONUS} min</td></tr></tbody></table><p class="note" style="margin-top:8px">Score = race time + penalties. Lowest score wins.</p>`}
 function rulesCard(){return`<div class="card"><h3>Race rules</h3><ol class="rules">
 <li>Wait for the facilitator to start the race. Every team's clue opens at the same time.</li>
 <li>Drive to your car park. The driver only drives; passengers solve the clue.</li>
@@ -139,7 +139,7 @@ function team(n){
   const T=TEAMS[n-1],t=teamStats(n);$('#title').textContent='Team '+n;
   if(!S.start)return`<div class="card env"><div class="flap"><h2>Sealed</h2><p>Your clue opens when the facilitator starts the race. Get in the car and wait.</p></div><div class="body"><p class="lbl">Park at</p><p class="addr">${esc(T.park)}</p><p class="lbl" style="margin-top:8px">Finish</p><p class="addr">${esc(FINISH)}</p></div></div>`+rulesCard();
   let out=`<div class="card env open"><div class="flap"><p class="lbl" style="color:#17130f">Park at</p><p class="addr">${esc(T.park)}</p><p class="lbl" style="color:#17130f;margin-top:8px">Your stop (walk from the car park)</p><p class="addr">${esc(T.addr)}</p><p class="lbl" style="color:#17130f;margin-top:8px">Finish</p><p class="addr">${esc(FINISH)}</p></div><div class="body"><h3>Your riddle</h3><blockquote>${esc(T.r)}</blockquote>`;
-  if(t.ok){const name=atob(T.s);out+=`</div></div><div class="card win"><h2>Correct: ${esc(name)}</h2><p>${n===5?'Head into City Square Mall and take a team selfie at the entrance sign.':'Walk in, find the stall, and show your Grab order below to collect your food. Then take a team selfie in front of the signboard.'}</p><p class="lbl">Solved at ${fmt(t.ok.at-S.start)}</p>${pens(t)}</div>`;
+  if(t.ok){const name=atob(T.s);out+=`</div></div><div class="card win"><h2>${t.gave?'Answer':'Correct'}: ${esc(name)}</h2><p>${n===5?'Head into City Square Mall and take a team selfie at the entrance sign.':'Walk in, find the stall, and show your Grab order below to collect your food. Then take a team selfie in front of the signboard.'}</p><p class="lbl">Solved at ${fmt(t.ok.at-S.start)}</p>${pens(t)}</div>`;
     if(n!==5)out+=`<div class="card"><h3>Your Grab order</h3><img class="ord" src="facilitators/team-${n}.png" alt="Grab Food order for Team ${n}" onerror="this.outerHTML='<p class=note>Your order screenshot isn\\'t up yet. Message the facilitators for your order number.</p>'"><p class="note">Show this at the stall to collect your food.</p></div>`;
     out+=`<div class="card"><h3>Selfie proof</h3><p>Send your team selfie to the facilitators on WhatsApp${CFG.whatsappNote?': '+esc(CFG.whatsappNote):'.'}</p></div>`;
     out+=`<div class="card${t.dAt?' win':''}"><h3>${t.dAt?'Delivered. Clock stopped at '+fmt(t.run):'Bring the food to the finish: '+esc(FINISH)}</h3>`;
@@ -153,8 +153,18 @@ function team(n){
   if(ui.pending)out+=`<div class="confirm">Check "<b>${esc(ui.pending)}</b>"? A wrong guess adds ${WRONG} minutes.<div class="acts"><button class="red" id="gyes">Yes, check it</button><button class="ghost" id="gno">Edit</button></div></div>`;
   if(ui.msg)out+=`<p class="msg ${ui.msgOk?'good':'bad'}">${esc(ui.msg)}</p>`;
   if(!canWrite)out+=`<p class="note">You can view this race but not submit. Ask the facilitator for Contributor access.</p>`;
-  out+=`</div></div><div class="card"><h3>Hint envelope</h3>${t.hint?`<blockquote>${esc(T.h)}</blockquote>`:ui.hintAsk?`<div class="confirm">Opening the hint adds ${HINT} minutes. Open it?<div class="acts"><button class="red" id="hyes">Open hint</button><button class="ghost" id="hno">Keep it sealed</button></div></div>`:`<p class="note">Stuck? Opening it costs ${HINT} minutes.</p><button class="ghost" id="hask" ${canWrite?'':'disabled'}>Open hint</button>`}${pens(t)}</div>`+rulesCard();
+  out+=`</div></div><div class="card"><h3>Hint envelope</h3>${t.hint?`<blockquote>${esc(T.h)}</blockquote>`:ui.hintAsk?`<div class="confirm">Opening the hint adds ${HINT} minutes. Open it?<div class="acts"><button class="red" id="hyes">Open hint</button><button class="ghost" id="hno">Keep it sealed</button></div></div>`:`<p class="note">Stuck? Opening it costs ${HINT} minutes.</p><button class="ghost" id="hask" ${canWrite?'':'disabled'}>Open hint</button>`}${pens(t)}</div>`+rulesCard()+giveUpCard();
   return out
+}
+function giveUpCard(){
+  const st=ui.gStep||0,ready=Date.now()-(ui.gAt||0)>2500;
+  if(st&&!ready)setTimeout(render,2600-(Date.now()-ui.gAt));
+  const Q=['',`Reveal the answer? This adds a <b>2-hour penalty</b> (+${GIVEUP} min) to your score.`,
+    `Are you sure? You must also send a video to the WM group chat saying you are <b>hopelessly lost</b>.`,
+    `Has all hope been lost? Have you really decided to give up?`][st];
+  const yes=['','Yes, reveal it','Yes, we\'ll send the video','Yes, we give up'][st];
+  const y=`<button class="red" id="gup" ${ready&&canWrite?'':'disabled'}>${yes}</button>`,n=`<button id="gnot">No, keep trying</button>`;
+  return`<div class="card"><h3>Really stuck?</h3>${st?`<div class="confirm"><p class="lbl">Step ${st} of 3</p>${Q}<div class="acts">${st===2?y+n:n+y}</div></div>`:`<p class="note">Last resort only. Revealing the answer adds ${GIVEUP} minutes (2 hours) to your score.</p><button class="ghost sm" id="gup" ${canWrite?'':'disabled'}>Reveal the answer</button>`}</div>`
 }
 const fmtS=ms=>ms<0?'−'+fmt(-ms):fmt(ms),penS=p=>p<0?'−'+(-p)+' min':'+'+p+' min';
 const score=t=>t.total!=null?t.total:S.start?Date.now()-S.start+t.pen*60000:null;
@@ -163,14 +173,14 @@ const finalRank=()=>{const R={};rank().filter(x=>x.t.dAt).forEach((x,k)=>R[x.T.n
 function board(){
   $('#title').textContent='Leaderboard';
   const rows=rank(),RK=finalRank();
-  return`<a class="btn ghost back" href="#">← Back to team list</a><div class="card"><h2>Live leaderboard</h2><p class="note">Score = race time + penalties. Lowest score leads. Updates live.</p><div class="scroll"><table class="lb"><thead><tr><th>#</th><th>Team</th><th class="n">Penalty</th><th>Score</th></tr></thead><tbody>${rows.map(({T,t},i)=>`<tr><td class="rank">${RK[T.n]??''}</td><td><b>Team ${T.n}</b><span class="st">${t.dAt?'Delivered':t.ok?'Solved at '+fmt(t.ok.at-S.start):S.start?'Solving':'Waiting'}</span></td><td class="n">${penS(t.pen)}</td><td class="n">${t.total!=null?`<b>${fmtS(t.total)}</b>`:`<span class="run">${S.start?fmtS(score(t)):'--:--'}</span>`}</td></tr>`).join('')}</tbody></table></div><p class="note" style="margin-top:10px">Grey scores are still running and include penalties so far. Bold scores are final: that team's food has been delivered. Shop names stay hidden so nobody gets a free answer.</p></div><div class="card"><h3>Penalties and bonus</h3>${penTable()}</div>`
+  return`<a class="btn ghost back" href="#">← Back to team list</a><div class="card"><h2>Live leaderboard</h2><p class="note">Score = race time + penalties. Lowest score leads. Updates live.</p><div class="scroll"><table class="lb"><thead><tr><th>#</th><th>Team</th><th class="n">Penalty</th><th>Score</th></tr></thead><tbody>${rows.map(({T,t},i)=>`<tr><td class="rank">${RK[T.n]??''}</td><td><b>Team ${T.n}</b><span class="st">${t.dAt?'Delivered':t.gave?'Gave up':t.ok?'Solved at '+fmt(t.ok.at-S.start):S.start?'Solving':'Waiting'}</span></td><td class="n">${penS(t.pen)}</td><td class="n">${t.total!=null?`<b>${fmtS(t.total)}</b>`:`<span class="run">${S.start?fmtS(score(t)):'--:--'}</span>`}</td></tr>`).join('')}</tbody></table></div><p class="note" style="margin-top:10px">Grey scores are still running and include penalties so far. Bold scores are final: that team's food has been delivered. Shop names stay hidden so nobody gets a free answer.</p></div><div class="card"><h3>Penalties and bonus</h3>${penTable()}</div>`
 }
 function host(){
   $('#title').textContent='Facilitator board';
   if(!canEdit)return`<div class="card"><h2>Facilitator only</h2><p>This board is for the race facilitator.</p><a class="btn ghost" href="#">Back to teams</a></div>`;
   const RK=finalRank();const rows=TEAMS.map(T=>({T,t:teamStats(T.n)}));
   let out=`<div class="card"><div class="ctl">${S.start?`<span class="pill">Started ${new Date(S.start).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</span>`:`<button class="red" id="start">Start the race</button>`}<button class="ghost" id="resetAsk">Reset race</button><a class="btn ghost" href="#">Team links</a></div>${ui.resetAsk?`<div class="confirm">This clears every guess, hint, penalty and time. It can't be undone.<div class="acts"><button class="red" id="resetYes">Clear everything</button><button class="ghost" id="resetNo">Cancel</button></div></div>`:''}<p class="note">Penalties: wrong guess +${WRONG} min, hint +${HINT}, Googling +${GOOGLE}, bonus −${BONUS}. Teams tap Delivered themselves (with a double check). You can still mark or undo it here.</p></div>`;
-  out+=`<div class="card"><h2>Leaderboard</h2><div class="scroll"><table class="stack"><thead><tr><th>#</th><th>Team</th><th>Status</th><th>Wrong</th><th>Hint</th><th>Googling</th><th>Bonus</th><th>Clock</th><th>Score</th><th>Food</th></tr></thead><tbody>${rows.map(({T,t},i)=>`<tr><td class="rank">${RK[T.n]??''}</td><td><b>Team ${T.n}</b><br><span class="note">${esc(atob(T.s))}</span></td><td>${t.dAt?'Delivered':t.ok?'Solved '+fmt(t.ok.at-S.start):S.start?'Solving':'Waiting'}</td><td class="n">${t.wrong}</td><td>${t.hint?'Opened':'Sealed'}</td><td><div class="ctl"><button class="sm ghost" data-adj="google" data-d="-1" data-t="${T.n}" aria-label="Remove Googling penalty">−</button><span>${t.google}</span><button class="sm ghost" data-adj="google" data-d="1" data-t="${T.n}" aria-label="Add Googling penalty">+</button></div></td><td><div class="ctl"><button class="sm ghost" data-adj="bonus" data-d="-1" data-t="${T.n}" aria-label="Remove bonus">−</button><span>${t.bonus}</span><button class="sm ghost" data-adj="bonus" data-d="1" data-t="${T.n}" aria-label="Add bonus">+</button></div></td><td class="n">${t.run!=null?fmt(t.run):S.start?fmt(Date.now()-S.start):'--:--'}</td><td class="n">${t.total!=null?`<b>${fmtS(t.total)}</b>`:S.start?`<span class="note">${fmtS(score(t))}</span>`:'--:--'}</td><td>${t.dAt?`<button class="sm ghost" data-undo="${T.n}">Undo</button>`:`<button class="sm" data-deliv="${T.n}" ${S.start?'':'disabled'}>Delivered</button>`}</td></tr>`).join('')}</tbody></table></div></div>`;
+  out+=`<div class="card"><h2>Leaderboard</h2><div class="scroll"><table class="stack"><thead><tr><th>#</th><th>Team</th><th>Status</th><th>Wrong</th><th>Hint</th><th>Googling</th><th>Bonus</th><th>Clock</th><th>Score</th><th>Food</th></tr></thead><tbody>${rows.map(({T,t},i)=>`<tr><td class="rank">${RK[T.n]??''}</td><td><b>Team ${T.n}</b><br><span class="note">${esc(atob(T.s))}</span></td><td>${t.dAt?'Delivered':t.gave?'Gave up '+fmt(t.ok.at-S.start):t.ok?'Solved '+fmt(t.ok.at-S.start):S.start?'Solving':'Waiting'}</td><td class="n">${t.wrong}</td><td>${t.hint?'Opened':'Sealed'}</td><td><div class="ctl"><button class="sm ghost" data-adj="google" data-d="-1" data-t="${T.n}" aria-label="Remove Googling penalty">−</button><span>${t.google}</span><button class="sm ghost" data-adj="google" data-d="1" data-t="${T.n}" aria-label="Add Googling penalty">+</button></div></td><td><div class="ctl"><button class="sm ghost" data-adj="bonus" data-d="-1" data-t="${T.n}" aria-label="Remove bonus">−</button><span>${t.bonus}</span><button class="sm ghost" data-adj="bonus" data-d="1" data-t="${T.n}" aria-label="Add bonus">+</button></div></td><td class="n">${t.run!=null?fmt(t.run):S.start?fmt(Date.now()-S.start):'--:--'}</td><td class="n">${t.total!=null?`<b>${fmtS(t.total)}</b>`:S.start?`<span class="note">${fmtS(score(t))}</span>`:'--:--'}</td><td>${t.dAt?`<button class="sm ghost" data-undo="${T.n}">Undo</button>`:`<button class="sm" data-deliv="${T.n}" ${S.start?'':'disabled'}>Delivered</button>`}</td></tr>`).join('')}</tbody></table></div></div>`;
   const log=[...S.guesses].sort((a,b)=>b.at-a.at);
   checkOrd();
   out+=`<div class="card"><h3>Grab order screenshots</h3><p class="note">Put them in the repo's facilitators folder as team-1.png to team-4.png. Teams see theirs only after solving.</p><div class="pens">${TEAMS.filter(T=>T.n!==5).map(T=>`<span class="pill">Team ${T.n}: ${ORD[T.n]===undefined?'checking…':ORD[T.n]?'✓ found':'missing'}</span>`).join('')}</div></div>`;
@@ -206,6 +216,10 @@ document.addEventListener('click',async e=>{
   else if(b.id==='uask'){ui.uAsk=true;render()}
   else if(b.id==='uno'){ui.uAsk=false;render()}
   else if(b.id==='uyes'){ui.uAsk=false;b.disabled=true;await db.doc('delivered/t'+r.n).delete()}
+  else if(b.id==='gnot'){ui.gStep=0;render()}
+  else if(b.id==='gup'){const st=ui.gStep||0;if(st&&Date.now()-(ui.gAt||0)<2500)return;
+    if(st<3){ui.gStep=st+1;ui.gAt=Date.now();render()}
+    else{ui.gStep=0;b.disabled=true;const T=TEAMS[r.n-1];await db.collection('guesses').add({team:r.n,text:'(gave up: answer revealed)',ok:true,gaveUp:true,at:Date.now()});ui.msg='';ui.draft=''}}
   else if(b.id==='hask'){ui.hintAsk=true;render()}
   else if(b.id==='hno'){ui.hintAsk=false;render()}
   else if(b.id==='hyes'){ui.hintAsk=false;await db.doc('hints/t'+r.n).set({at:Date.now()})}
@@ -227,7 +241,7 @@ render();
   let got=0;const done=()=>{if(++got>=5){clearTimeout(timer);if(S.err.startsWith("Can't"))S.err='';}S.loaded=true;render()};
   const onErr=e=>{clearTimeout(timer);S.err='Race data stopped updating ('+(e&&e.code||'error')+'). Reload the page.';S.loaded=true;render()};
   onSnapshot(doc(fs,'race/state'),s=>{S.start=s.exists()?(+s.data().startedAt||null):null;done()},onErr);
-  onSnapshot(collection(fs,'guesses'),q=>{S.guesses=q.docs.map(d=>{const x=d.data();return{team:+x.team,text:String(x.text||''),ok:!!x.ok,at:+x.at||0}});done()},onErr);
+  onSnapshot(collection(fs,'guesses'),q=>{S.guesses=q.docs.map(d=>{const x=d.data();return{team:+x.team,text:String(x.text||''),ok:!!x.ok,gaveUp:!!x.gaveUp,at:+x.at||0}});done()},onErr);
   const map=(c,k)=>onSnapshot(collection(fs,c),q=>{const o={};q.docs.forEach(d=>o[d.id]=d.data());S[k]=o;done()},onErr);
   map('hints','hints');map('delivered','deliv');map('adjust','adj');
 })();
